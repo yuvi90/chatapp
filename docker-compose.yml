@@ -1,0 +1,61 @@
+version: '3.9'
+services:
+  # Express Container  
+  backend:
+    build:
+      context: './server'
+      dockerfile: Dockerfile
+    image: backend
+    restart: always
+    ports:
+      - 4000:4000
+      - 9229:9229
+    env_file:
+      - ./server/.env
+    container_name: chatapp_server
+    networks:
+      - chatapp
+    volumes:
+      - /app/node_modules
+    develop:
+      watch:
+        - action: rebuild
+          path: ./server/package.json
+        - action: rebuild
+          path: ./server/package-lock.json
+        - action: sync
+          path: ./server
+          target: /app
+          ignore:
+            - node_modules/
+            - dist/
+  # React Container
+  frontend:
+    build:
+      context: './client'
+      dockerfile: Dockerfile
+    image: frontend
+    restart: always
+    ports:
+      - 5173:5173
+    env_file:
+      - ./client/.env
+    container_name: chatapp_client
+    networks:
+      - chatapp
+    volumes:
+      - /app/node_modules
+    develop:
+      watch:
+        - action: rebuild
+          path: ./client/package.json
+        - action: rebuild
+          path: ./client/package-lock.json
+        - action: sync
+          path: ./client
+          target: /app
+          ignore:
+            - node_modules/
+            - dist/
+networks:
+  chatapp:
