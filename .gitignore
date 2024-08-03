@@ -143,4 +143,4 @@ dist
 .pnp.*
 
 # User
-prisma/
+.db.env

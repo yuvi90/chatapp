@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id                        Int             @id @default(autoincrement())
+  avatar                    Bytes?
+  username                  String          @unique
+  email                     String          @unique
+  password                  String
+  login_type                String
+  is_email_verified         Boolean         @default(false)
+  created_at                DateTime        @default(now())
+  updated_at                DateTime        @updatedAt
+  email_verification_expiry DateTime?
+  email_verification_token  String?
+  refresh_token             String?
+  role_id                   Int             @default(2)
+  role                      role            @relation(fields: [role_id], references: [id])
+  chats                     chats[]         @relation("participants")
+  messages                  chat_messages[]
+}
+
+model role {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  users users[]
+}
+
+model chats {
+  id              Int             @id @default(autoincrement())
+  name            String          @default("single")
+  is_group_chat   Boolean         @default(false)
+  participants    users[]         @relation("participants")
+  admin_id        Int
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  last_message_id Int?
+  messages        chat_messages[]
+}
+
+model chat_messages {
+  id         Int      @id @default(autoincrement())
+  sender_id  Int
+  sender     users    @relation(fields: [sender_id], references: [id])
+  content    String
+  chat_id    Int
+  chat       chats    @relation(fields: [chat_id], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}

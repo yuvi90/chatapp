@@ -29,6 +29,8 @@ services:
           ignore:
             - node_modules/
             - dist/
+    depends_on:
+      - db
   # React Container
   frontend:
     build:
@@ -57,5 +59,34 @@ services:
           ignore:
             - node_modules/
             - dist/
+    depends_on:
+    - db
+  # Postgres Container
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    env_file:
+      - ./.db.env
+    container_name: chatapp_db
+    networks:
+      - chatapp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  # Adminer Container
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 6500:8080
+    container_name: chatapp_adminer
+    networks:
+      - chatapp
+    depends_on:
+      - db
 networks:
   chatapp:
+volumes:
+  postgres_data:
+  
