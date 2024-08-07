@@ -28,6 +28,8 @@ model Users {
   isEmailVerified         Boolean            @default(false)
   emailVerificationExpiry DateTime?
   emailVerificationToken  String?
+  resetPasswordExpiry     DateTime?
+  resetPasswordToken      String?
   refreshToken            String?
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
