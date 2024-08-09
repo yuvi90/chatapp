@@ -162,7 +162,7 @@ const AuthController = {
             lastName: foundUser.userProfile?.lastName,
             role: foundUser.role,
             email: foundUser.email,
-            emailVerified: foundUser.isEmailVerified,
+            isEmailVerified: foundUser.isEmailVerified,
             loginType: foundUser.loginType,
           },
         }),
