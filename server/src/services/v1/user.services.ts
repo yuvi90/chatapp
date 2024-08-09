@@ -1,6 +1,13 @@
 import xPrisma, { ExtendedPrismaClient } from "../../config/db.js";
 import { Prisma, User, UserProfile } from "@prisma/client";
 
+type UserWithProfile = Pick<
+  User,
+  "id" | "username" | "email" | "role" | "loginType" | "isEmailVerified" | "createdAt" | "updatedAt"
+> & {
+  userProfile: Pick<UserProfile, "firstName" | "lastName" | "avatar"> | null;
+};
+
 class UserService {
   private prisma: ExtendedPrismaClient["user"];
 
@@ -10,11 +17,28 @@ class UserService {
 
   /**
    * Retrieves a list of all users.
-   *
-   * @return {Promise<(User & { userProfile: UserProfile | null })[]>} A promise that resolves to a list of users.
+   * @return {Promise<UserWithProfile[]>} A promise that resolves to a list of users.
    */
-  async getUsers(): Promise<(User & { userProfile: UserProfile | null })[]> {
-    return this.prisma.findMany({ include: { userProfile: true } });
+  async getUsers(): Promise<UserWithProfile[]> {
+    return this.prisma.findMany({
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        loginType: true,
+        isEmailVerified: true,
+        createdAt: true,
+        updatedAt: true,
+        userProfile: {
+          select: {
+            firstName: true,
+            lastName: true,
+            avatar: true,
+          },
+        },
+      },
+    });
   }
 
   /**

@@ -108,7 +108,7 @@ const UserController = {
               username: user.userProfile ? user.userProfile.firstName : user.username,
               verificationUrl: `${req.protocol}://${req.get(
                 "host",
-              )}/api/users/verify-email/${unHashedToken}`,
+              )}/api/v1/users/verify-email/${unHashedToken}`,
             }),
           });
         })
