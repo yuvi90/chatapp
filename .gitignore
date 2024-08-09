@@ -10,6 +10,7 @@ mongo-init.js
 *.njsproj
 *.sln
 *.sw?
+.db.env
 
 # Logs
 logs
@@ -141,6 +142,3 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-
-# User
-.db.env

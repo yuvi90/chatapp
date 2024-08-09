@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { ZodSchema } from "zod";
 import { ApiError } from "../utils/response-handler.js";
 
-import { errorHandler } from "./error.middlewares.js";
 /**
  *
  * @param {ZodSchema} schema
@@ -14,7 +13,8 @@ import { errorHandler } from "./error.middlewares.js";
  */
 
 export const validate =
-  (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
+  <TBody>(schema: ZodSchema<TBody>) =>
+  (req: Request<any, any, TBody>, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
 
     if (!result.success) {

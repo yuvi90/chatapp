@@ -3,13 +3,11 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 
-import config from "./config/index.js";
 import { errorHandler } from "./middlewares/error.middlewares.js";
+import config from "./config/index.js";
 
 // Routes
-import authRoutes from "./routes/auth.routes.js";
-import userRoutes from "./routes/user.routes.js";
-import adminRoutes from "./routes/admin.routes.js";
+import routerConfig from "./routes/index.js";
 
 // Express App
 const app = express();
@@ -20,17 +18,8 @@ app.use(cors(config.corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/test", async (req, res) => {
-  try {
-    res.send("Hello World!");
-  } catch (error) {
-    console.log(error);
-  }
-});
-
-app.use("/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/admin", adminRoutes);
+// Initializes Routes
+routerConfig(app);
 
 // Error Middleware
 app.use(errorHandler);

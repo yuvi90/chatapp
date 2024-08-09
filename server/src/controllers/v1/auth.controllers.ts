@@ -1,18 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 // Importing Locals
-import userService from "../services/user.services.js";
-import { ApiResponse, ApiError } from "../utils/response-handler.js";
+import userService from "@/services/v1/user.services.js";
+import { ApiResponse, ApiError } from "@/utils/response-handler.js";
 import {
   generateAccessToken,
   generateRefreshToken,
   generateTemporaryToken,
   verifyToken,
-} from "../utils/helpers.js";
+} from "@/utils/helpers.js";
 
 // Types
-import { SignUpSchema, SignInSchema } from "../validators/auth.validators.js";
-import { JwtPayload, RefreshTokenPayLoad } from "../types/types.js";
-import { sendEmail, emailVerificationMailgenContent } from "../utils/mail.js";
+import { SignUpSchema, SignInSchema } from "@/validators/auth.validators.js";
+import { sendEmail, emailVerificationMailgenContent } from "@/utils/mail.js";
 
 interface TypedRequestBody<T> extends Request {
   body: T;
@@ -27,8 +26,7 @@ const AuthController = {
   // Register New User
   registerUser: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { username, password, email, firstName, lastName }: SignUpSchema =
-        req.body;
+      const { username, password, email, firstName, lastName }: SignUpSchema = req.body;
 
       // Check for duplicate username or email
       const duplicateUser = await userService.findExistingUser(username, email);
@@ -38,18 +36,9 @@ const AuthController = {
       }
 
       // Create and store new user
-      const user = await userService.userSignUp(
-        firstName,
-        lastName,
-        username,
-        email,
-        password
-      );
+      const user = await userService.userSignUp(firstName, lastName, username, email, password);
       if (!user) {
-        throw new ApiError(
-          500,
-          "Something went wrong while registering the user !"
-        );
+        throw new ApiError(500, "Something went wrong while registering the user !");
       }
 
       /**
@@ -57,8 +46,7 @@ const AuthController = {
        * hashedToken: we will keep record of hashedToken to validate the unHashedToken in verify email controller
        * tokenExpiry: Expiry to be checked before validating the incoming token
        */
-      const { unHashedToken, hashedToken, tokenExpiry } =
-        generateTemporaryToken();
+      const { unHashedToken, hashedToken, tokenExpiry } = generateTemporaryToken();
 
       /**
        * assign hashedToken and tokenExpiry in DB till user clicks on email verification link
@@ -75,11 +63,9 @@ const AuthController = {
             email: user.email,
             subject: "Please verify your email",
             mailgenContent: emailVerificationMailgenContent({
-              username: user.userProfile
-                ? user.userProfile.firstName
-                : user.username,
+              username: user.userProfile ? user.userProfile.firstName : user.username,
               verificationUrl: `${req.protocol}://${req.get(
-                "host"
+                "host",
               )}/api/users/verify-email/${unHashedToken}`,
             }),
           });
@@ -89,9 +75,7 @@ const AuthController = {
         });
 
       // Send Response
-      return res
-        .status(201)
-        .json(new ApiResponse(200, "User created successfully !"));
+      return res.status(201).json(new ApiResponse(200, "User created successfully !"));
     } catch (error) {
       next(error);
     }
@@ -110,16 +94,13 @@ const AuthController = {
       }
 
       // Check Password
-      const match = await userService.checkPassword(
-        password,
-        foundUser.password
-      );
+      const match = await userService.checkPassword(password, foundUser.password);
       if (!match) {
         throw new ApiError(400, "Invalid Password !");
       }
 
       // Access Token
-      const tokenPayload: JwtPayload = {
+      const tokenPayload: TokenPayload.JwtPayload = {
         user: {
           _id: foundUser.id,
           username: foundUser.username,
@@ -132,7 +113,7 @@ const AuthController = {
       }
 
       // Refresh Token
-      const refreshTokenPayload: RefreshTokenPayLoad = {
+      const refreshTokenPayload: TokenPayload.RefreshTokenPayLoad = {
         _id: foundUser.id,
         username: foundUser.username,
       };
@@ -142,10 +123,7 @@ const AuthController = {
       }
 
       // Save RefreshToken in Database
-      const result = await userService.saveRefreshToken(
-        foundUser.id,
-        refreshToken
-      );
+      const result = await userService.saveRefreshToken(foundUser.id, refreshToken);
 
       if (!result) {
         throw new ApiError(500, "Something went wrong !");
@@ -165,7 +143,7 @@ const AuthController = {
         new ApiResponse(200, "Login successful !", {
           accessToken,
           role: foundUser.role,
-        })
+        }),
       );
     } catch (error) {
       next(error);
@@ -173,11 +151,7 @@ const AuthController = {
   },
 
   // Logout
-  logoutUser: async (
-    req: TypedRequestCookies,
-    res: Response,
-    next: NextFunction
-  ) => {
+  logoutUser: async (req: TypedRequestCookies, res: Response, next: NextFunction) => {
     const cookies = req.cookies;
     try {
       // No Content
@@ -199,10 +173,7 @@ const AuthController = {
       }
 
       // If user found
-      const result = await userService.deleteRefreshToken(
-        foundUser.id,
-        refreshToken
-      );
+      const result = await userService.deleteRefreshToken(foundUser.id, refreshToken);
       if (!result) return res.sendStatus(403);
 
       res.clearCookie("jwt", {
@@ -217,11 +188,7 @@ const AuthController = {
   },
 
   // Refresh Token
-  refreshAccessToken: async (
-    req: TypedRequestCookies,
-    res: Response,
-    next: NextFunction
-  ) => {
+  refreshAccessToken: async (req: TypedRequestCookies, res: Response, next: NextFunction) => {
     const cookies = req.cookies;
     try {
       if (!cookies?.jwt) return res.sendStatus(401); // Unauthorized
@@ -232,7 +199,7 @@ const AuthController = {
       if (!foundUser) return res.status(403); // Forbidden
 
       // Validate refresh token
-      const decoded = verifyToken<RefreshTokenPayLoad>(refreshToken, "refresh");
+      const decoded = verifyToken<TokenPayload.RefreshTokenPayLoad>(refreshToken, "refresh");
 
       // Forbidden (invalid token)
       if (typeof decoded === "string") {
@@ -246,7 +213,7 @@ const AuthController = {
       }
 
       // Generate a new access token
-      const tokenPayload: JwtPayload = {
+      const tokenPayload: TokenPayload.JwtPayload = {
         user: {
           _id: foundUser.id,
           username: foundUser.username,
@@ -263,7 +230,7 @@ const AuthController = {
         new ApiResponse(200, "success", {
           accessToken,
           role: foundUser.role,
-        })
+        }),
       );
     } catch (error) {
       next(error);

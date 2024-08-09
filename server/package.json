@@ -5,15 +5,22 @@
   "type": "module",
   "scripts": {
     "clean": "rimraf dist",
-    "build": "npm run clean && npx tsc -p tsconfig.build.json",
+    "build": "npm run clean && npx tspc -p tsconfig.build.json",
     "start": "node dist/app.js",
-    "dev": "npx tsc -w & nodemon dist/app.js"
+    "dev": "npx tspc -w & nodemon dist/app.js",
+    "format": "prettier --write 'src/**/*.{md,json,js,ts}'",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@eslint/js": "^9.8.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
@@ -23,11 +30,20 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.0.3",
     "@types/nodemailer": "^6.4.15",
-    "@types/validator": "^13.12.0",
+    "@vitest/coverage-v8": "^2.0.5",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-vitest": "^0.5.4",
     "nodemon": "^3.1.4",
+    "prettier": "^3.3.3",
     "prisma": "^5.17.0",
     "rimraf": "^6.0.1",
-    "typescript": "^5.5.4"
+    "ts-patch": "^3.2.1",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.0.1",
+    "typescript-transform-paths": "^3.4.10",
+    "vitest": "^2.0.5"
   },
   "dependencies": {
     "@prisma/client": "^5.17.0",
@@ -40,7 +56,6 @@
     "mailgen": "^2.0.28",
     "morgan": "^1.10.0",
     "nodemailer": "^6.9.14",
-    "validator": "^13.12.0",
     "zod": "^3.23.8"
   }
 }

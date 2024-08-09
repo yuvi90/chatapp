@@ -10,7 +10,7 @@ const signUpExtension = Prisma.defineExtension({
         username: string,
         email: string,
         password: string,
-        role: "basic" | "admin" = "basic"
+        role: "basic" | "admin" = "basic",
       ) {
         const hash = await bcrypt.hash(password, 12);
         return xPrisma.users.create({

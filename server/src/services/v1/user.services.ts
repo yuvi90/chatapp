@@ -1,4 +1,4 @@
-import xPrisma, { ExtendedPrismaClient } from "../config/db.js";
+import xPrisma, { ExtendedPrismaClient } from "../../config/db.js";
 import { Prisma } from "@prisma/client";
 
 class UserService {

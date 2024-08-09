@@ -1,15 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 // Importing Locals
-import config from "../config/index.js";
-import userService from "../services/user.services.js";
-import { ApiResponse, ApiError } from "../utils/response-handler.js";
-import { createHashToken, generateTemporaryToken } from "../utils/helpers.js";
+import config from "../../config/index.js";
+import userService from "../../services/v1/user.services.js";
+import { ApiResponse, ApiError } from "../../utils/response-handler.js";
+import { createHashToken, generateTemporaryToken, isAuthenticated } from "../../utils/helpers.js";
 import {
   emailVerificationMailgenContent,
   forgotPasswordMailgenContent,
   sendEmail,
-} from "../utils/mail.js";
-import { AuthUserRequest } from "../types/types.js";
+} from "../../utils/mail.js";
 
 interface TypedRequestBody<T> extends Request {
   body: T;
@@ -25,9 +24,7 @@ const UserController = {
   getAllUsers: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const users = await userService.getUsers();
-      return res
-        .status(200)
-        .json(new ApiResponse(200, "Users fetched successfully !", users));
+      return res.status(200).json(new ApiResponse(200, "Users fetched successfully !", users));
     } catch (error) {
       next(error);
     }
@@ -57,21 +54,20 @@ const UserController = {
         isEmailVerified: true,
       });
 
-      return res
-        .status(200)
-        .json(new ApiResponse(200, "Email verified successfully !"));
+      return res.status(200).json(new ApiResponse(200, "Email verified successfully !"));
     } catch (error) {
       next(error);
     }
   },
 
-  resendVerificationEmail: async (
-    req: AuthUserRequest,
-    res: Response,
-    next: NextFunction
-  ) => {
+  resendVerificationEmail: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const username = req.user?.username as string;
+      // if user is not authenticated
+      if (!isAuthenticated(req)) {
+        throw new ApiError(401, "Unauthorized!");
+      }
+
+      const { username } = req.user;
       const user = await userService.getUserByUsername(username);
 
       // if user doesn't exist
@@ -84,8 +80,7 @@ const UserController = {
         throw new ApiError(409, "Email is already verified!");
       }
 
-      const { unHashedToken, hashedToken, tokenExpiry } =
-        generateTemporaryToken();
+      const { unHashedToken, hashedToken, tokenExpiry } = generateTemporaryToken();
 
       userService
         .updateUser(user.id, {
@@ -98,11 +93,9 @@ const UserController = {
             email: user.email,
             subject: "Please verify your email",
             mailgenContent: emailVerificationMailgenContent({
-              username: user.userProfile
-                ? user.userProfile.firstName
-                : user.username,
+              username: user.userProfile ? user.userProfile.firstName : user.username,
               verificationUrl: `${req.protocol}://${req.get(
-                "host"
+                "host",
               )}/api/users/verify-email/${unHashedToken}`,
             }),
           });
@@ -111,9 +104,7 @@ const UserController = {
           console.log(error);
         });
 
-      return res
-        .status(200)
-        .json(new ApiResponse(200, "Verification email sent successfully !"));
+      return res.status(200).json(new ApiResponse(200, "Verification email sent successfully !"));
     } catch (error) {
       next(error);
     }
@@ -128,8 +119,7 @@ const UserController = {
         throw new ApiError(404, "User not found with this email address !");
       }
 
-      const { unHashedToken, hashedToken, tokenExpiry } =
-        generateTemporaryToken();
+      const { unHashedToken, hashedToken, tokenExpiry } = generateTemporaryToken();
 
       userService
         .updateUser(user.id, {
@@ -142,9 +132,7 @@ const UserController = {
             email: user.email,
             subject: "Reset your password",
             mailgenContent: forgotPasswordMailgenContent({
-              username: user.userProfile
-                ? user.userProfile.firstName
-                : user.username,
+              username: user.userProfile ? user.userProfile.firstName : user.username,
               passwordResetUrl:
                 // ! NOTE: Following link should be the link of the frontend page responsible to request password reset
                 // ! Frontend will send the below token with the new password in the request body to the backend reset password endpoint
@@ -155,9 +143,7 @@ const UserController = {
         .catch((error) => {
           console.log(error);
         });
-      return res
-        .status(200)
-        .json(new ApiResponse(200, "Password reset email sent successfully !"));
+      return res.status(200).json(new ApiResponse(200, "Password reset email sent successfully !"));
     } catch (error) {
       next(error);
     }
@@ -187,26 +173,21 @@ const UserController = {
         resetPasswordExpiry: null,
       });
 
-      return res
-        .status(200)
-        .json(new ApiResponse(200, "Password reset successfully !"));
+      return res.status(200).json(new ApiResponse(200, "Password reset successfully !"));
     } catch (error) {
       next(error);
     }
   },
 
-  changePassword: async (
-    req: AuthUserRequest,
-    res: Response,
-    next: NextFunction
-  ) => {
+  changePassword: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const {
-        oldPassword,
-        newPassword,
-      }: { oldPassword: string; newPassword: string } = req.body;
+      // if user is not authenticated
+      if (!isAuthenticated(req)) {
+        throw new ApiError(401, "Unauthorized!");
+      }
 
-      const username = req.user?.username as string;
+      const { username } = req.user;
+      const { oldPassword, newPassword }: { oldPassword: string; newPassword: string } = req.body;
 
       const user = await userService.getUserByUsername(username);
       if (!user) {
@@ -222,9 +203,7 @@ const UserController = {
         password: await userService.createPasswordHash(newPassword),
       });
 
-      return res
-        .status(200)
-        .json(new ApiResponse(200, "Password changed successfully !"));
+      return res.status(200).json(new ApiResponse(200, "Password changed successfully !"));
     } catch (error) {
       next(error);
     }

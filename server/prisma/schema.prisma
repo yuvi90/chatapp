@@ -1,10 +1,10 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
 }
 
 enum Roles {
@@ -40,17 +40,19 @@ model Users {
   @@index([email])
   @@index([username])
   @@index([createdAt, updatedAt])
+  @@map("users")
 }
 
 model UserProfile {
   id        String @id @default(uuid())
-  firstName String
-  lastName  String
+  firstName String @map("first_name") @db.VarChar(30)
+  lastName  String @map("last_name") @db.VarChar(30)
   avatar    Bytes?
+  userId    String @unique @map("user_id")
   user      Users  @relation(fields: [userId], references: [id], onDelete: Cascade) // 1-1
-  userId    String @unique
 
   @@index([firstName, lastName])
+  @@map("user_profiles")
 }
 
 model Chats {
@@ -64,6 +66,7 @@ model Chats {
   chatParticipants ChatParticipants[]
 
   @@index([isGroupChat, createdAt])
+  @@map("chats")
 }
 
 model ChatParticipants {
@@ -78,6 +81,7 @@ model ChatParticipants {
 
   @@unique([chatId, userId])
   @@index([chatId, userId])
+  @@map("chat_participants")
 }
 
 model ChatMessages {
@@ -92,4 +96,5 @@ model ChatMessages {
 
   @@index([chatId, createdAt])
   @@index([senderId, createdAt])
+  @@map("chat_messages")
 }

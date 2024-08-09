@@ -1,17 +1,17 @@
-import { Response, NextFunction } from "express";
-
-import { verifyToken } from "../utils/helpers.js";
-import userService from "../services/user.services.js";
+import { Request, Response, NextFunction } from "express";
+import { isAuthenticated, verifyToken } from "../utils/helpers.js";
+import userService from "../services/v1/user.services.js";
 
 // Types
-import { JwtPayload, AuthUserRequest } from "../types/types.js";
+import { ApiError } from "../utils/response-handler.js";
+
+interface AuthRequest extends Request {
+  user?: TokenPayload.JwtPayload["user"];
+  __isAuthenticated?: boolean;
+}
 
 // Authentication Middleware
-export const authenticate = async (
-  req: AuthUserRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -23,7 +23,7 @@ export const authenticate = async (
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = verifyToken<JwtPayload>(token, "access");
+    const decoded = verifyToken<TokenPayload.JwtPayload>(token, "access");
 
     if (
       !decoded ||
@@ -39,6 +39,7 @@ export const authenticate = async (
     }
 
     req.user = decoded.user;
+    req.__isAuthenticated = true;
     next();
   } catch (error) {
     next(error);
@@ -46,12 +47,13 @@ export const authenticate = async (
 };
 
 // Authorization Middleware
-export const adminOnly = async (
-  req: AuthUserRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const adminOnly = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // if user is not authenticated
+    if (!isAuthenticated(req)) {
+      throw new ApiError(401, "Unauthorized!");
+    }
+
     const user = req.user;
 
     if (!user?._id || !user?.username || !user?.role)

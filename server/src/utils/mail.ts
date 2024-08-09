@@ -73,16 +73,14 @@ const emailVerificationMailgenContent = ({
       name: username,
       intro: "Welcome to our app! We're very excited to have you on board.",
       action: {
-        instructions:
-          "To verify your email please click on the following button:",
+        instructions: "To verify your email please click on the following button:",
         button: {
           color: "#22BC66", // Optional action button color
           text: "Verify your email",
           link: verificationUrl,
         },
       },
-      outro:
-        "Need help, or have questions? Just reply to this email, we'd love to help.",
+      outro: "Need help, or have questions? Just reply to this email, we'd love to help.",
     },
   };
 };
@@ -98,31 +96,22 @@ type ForgotPasswordOptions = {
   username: string;
   passwordResetUrl: string;
 };
-const forgotPasswordMailgenContent = ({
-  username,
-  passwordResetUrl,
-}: ForgotPasswordOptions) => {
+const forgotPasswordMailgenContent = ({ username, passwordResetUrl }: ForgotPasswordOptions) => {
   return {
     body: {
       name: username,
       intro: "We got a request to reset the password of our account",
       action: {
-        instructions:
-          "To reset your password click on the following button or link:",
+        instructions: "To reset your password click on the following button or link:",
         button: {
           color: "#22BC66", // Optional action button color
           text: "Reset password",
           link: passwordResetUrl,
         },
       },
-      outro:
-        "Need help, or have questions? Just reply to this email, we'd love to help.",
+      outro: "Need help, or have questions? Just reply to this email, we'd love to help.",
     },
   };
 };
 
-export {
-  sendEmail,
-  emailVerificationMailgenContent,
-  forgotPasswordMailgenContent,
-};
+export { sendEmail, emailVerificationMailgenContent, forgotPasswordMailgenContent };

@@ -20,11 +20,7 @@ export const RegisterSchema = z.object({
     .toLowerCase()
     .min(3, "Username must be between 3 and 12 characters !")
     .max(12, "Username must be between 3 and 12 characters !"),
-  email: z
-    .string()
-    .nonempty("Email is required !")
-    .trim()
-    .email("Invalid email address !"),
+  email: z.string().nonempty("Email is required !").trim().email("Invalid email address !"),
   password: z
     .string()
     .nonempty("Password is required !")
