@@ -12,16 +12,35 @@ import {
 
 const UserController = {
   /**
-   * Retrieves a list of all users.
+   * Retrieves the user's profile information.
    *
    * @param {Request} req - The request object.
    * @param {Response} res - The response object.
    * @param {NextFunction} next - The next function in the middleware chain.
    */
-  getAllUsers: async (req: Request, res: Response, next: NextFunction) => {
+  getMe: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await userService.getUsers();
-      return res.status(200).json(new ApiResponse(200, "Users fetched successfully!", users));
+      // if user is not authenticated
+      if (!isAuthenticated(req)) {
+        throw new ApiError(401, "Unauthorized!");
+      }
+      const user = await userService.getUserByProperty("username", req.user.username);
+      if (!user) {
+        throw new ApiError(404, "User not found!");
+      }
+      return res.status(200).json(
+        new ApiResponse(200, "User fetched successfully!", {
+          _id: user.id,
+          avatar: user.userProfile?.avatar,
+          username: user.username,
+          firstName: user.userProfile?.firstName,
+          lastName: user.userProfile?.lastName,
+          role: user.role,
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
+          loginType: user.loginType,
+        }),
+      );
     } catch (error) {
       next(error);
     }
@@ -261,6 +280,42 @@ const UserController = {
       });
 
       return res.status(200).json(new ApiResponse(200, "Password changed successfully!"));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Updates the avatar of the authenticated user.
+   *
+   * @param {Request} req - The incoming HTTP request.
+   * @param {Response} res - The outgoing HTTP response.
+   * @param {NextFunction} next - The next middleware function in the stack.
+   * @throws {ApiError} - If the user is not authenticated or if the file is not found.
+   */
+  updateAvatar: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // if user is not authenticated
+      if (!isAuthenticated(req)) {
+        throw new ApiError(401, "Unauthorized!");
+      }
+
+      // if file not found
+      if (!req.file) {
+        throw new ApiError(400, "File not found!");
+      }
+
+      // Update the user's avatar
+      const user = await userService.updateAvatar(req.user._id, req.file.filename);
+      if (!user) {
+        throw new ApiError(500, "Failed to update avatar!");
+      }
+
+      return res.status(200).json(
+        new ApiResponse(200, "Avatar updated successfully!", {
+          avatar: `${req.protocol}://${req.get("host")}/uploads/${user.userProfile?.avatar}`,
+        }),
+      );
     } catch (error) {
       next(error);
     }

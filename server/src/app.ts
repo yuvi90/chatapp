@@ -18,6 +18,9 @@ app.use(cors(config.corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
+// Public Uploads Folder
+app.use("/uploads", express.static("uploads"));
+
 // Initializes Routes
 routerConfig(app);
 

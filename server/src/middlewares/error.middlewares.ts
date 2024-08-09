@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import { ApiError } from "../utils/response-handler.js";
+import { removeUnusedMulterImageFilesOnError } from "@/utils/helpers.js";
 
 /**
  *
@@ -11,7 +12,7 @@ import { ApiError } from "../utils/response-handler.js";
 type requestType = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => Promise<void | Response<unknown, Record<string, unknown>>>;
 
 const tryCatchWrapper = (request: requestType) => {
@@ -26,12 +27,7 @@ const tryCatchWrapper = (request: requestType) => {
  *
  */
 
-const errorHandler = (
-  err: ApiError | Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const errorHandler = (err: ApiError | Error, req: Request, res: Response, next: NextFunction) => {
   let error: ApiError;
   if (err instanceof ApiError) {
     error = err;
@@ -62,6 +58,8 @@ const errorHandler = (
 
   // Log error
   console.log(error);
+
+  removeUnusedMulterImageFilesOnError(req);
 
   // Send error response
   return res.status(error.statusCode).json(response);

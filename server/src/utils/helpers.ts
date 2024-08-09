@@ -1,5 +1,6 @@
 import { Request } from "express";
 import jwt from "jsonwebtoken";
+import fs from "fs";
 import crypto from "crypto";
 import config from "@/config/index.js";
 
@@ -21,6 +22,20 @@ export function isAuthenticated(
       undefined
   );
 }
+
+/**
+ * Checks if the authenticated user is the owner of a given resource.
+ *
+ * @param {Request & TokenPayload.JwtPayload & { __isAuthenticated: true }} req - The Express request object.
+ * @param {string} resourceUserId - The ID of the resource to check ownership for.
+ * @return {Boolean} True if the authenticated user is the owner of the resource, false otherwise.
+ */
+export const isResourceOwner = (
+  req: Request & TokenPayload.JwtPayload & { __isAuthenticated: true },
+  resourceUserId: string,
+): Boolean => {
+  return req.user._id === resourceUserId;
+};
 
 /**
  * Generates an access token based on the provided token payload.
@@ -106,4 +121,49 @@ export const generateTemporaryToken = function (): {
   const tokenExpiry = new Date(Date.now() + config.userTemporaryTokenExpiry).toISOString();
 
   return { unHashedToken, hashedToken, tokenExpiry };
+};
+
+/**
+ * @param {Request} req
+ * @description **This utility function is responsible for removing unused image files due to the api fail**.
+ *
+ * **For example:**
+ * * This can occur when product is created.
+ * * In product creation process the images are getting uploaded before product gets created.
+ * * Once images are uploaded and if there is an error creating a product, the uploaded images are unused.
+ * * In such case, this function will remove those unused images.
+ */
+export const removeUnusedMulterImageFilesOnError = (req: Request) => {
+  try {
+    const multerFile = req.file;
+    const multerFiles = req.files;
+
+    if (multerFile) {
+      // If there is file uploaded and there is validation error
+      fs.unlink(multerFile.path, (err) => {
+        if (err) console.log("Error while removing local files: ", err);
+        else {
+          console.log("Removed local: ", multerFile.path);
+        }
+      });
+    }
+
+    if (multerFiles) {
+      // If there are multiple files uploaded for more than one fields
+      const filesValueArray = Object.values(multerFiles) as Express.Multer.File[][];
+      filesValueArray.map((fileFields: Express.Multer.File[]) => {
+        fileFields.map((fileObject) => {
+          fs.unlink(fileObject.path, (err) => {
+            if (err) console.log("Error while removing local files: ", err);
+            else {
+              console.log("Removed local: ", fileObject.path);
+            }
+          });
+        });
+      });
+    }
+  } catch (error) {
+    // fail silently
+    console.log("Error while removing image files: ", error);
+  }
 };

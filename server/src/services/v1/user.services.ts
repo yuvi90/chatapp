@@ -177,6 +177,30 @@ class UserService {
       },
     });
   }
+
+  /**
+   * Updates the avatar of a user with the given userId.
+   *
+   * @param {string} userId - The ID of the user whose avatar is being updated.
+   * @param {string} fileName - The new file name for the avatar.
+   */
+  async updateAvatar(userId: string, fileName: string) {
+    return this.prisma.update({
+      where: {
+        id: userId,
+      },
+      include: {
+        userProfile: true,
+      },
+      data: {
+        userProfile: {
+          update: {
+            avatar: fileName,
+          },
+        },
+      },
+    });
+  }
 }
 
 export default new UserService(xPrisma.user);
