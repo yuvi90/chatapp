@@ -12,11 +12,11 @@ const router = express.Router();
 
 // Public Routes - /api/users
 
+router.get("/verify-email/:token", UserController.verifyEmail);
+
 router.post("/forgot-password", validate(ForgotPasswordSchema), UserController.forgotPassword);
 
 router.post("/reset-password/:token", validate(PasswordResetSchema), UserController.resetPassword);
-
-router.get("/verify-email/:token", UserController.verifyEmail);
 
 // Private Routes - /api/users
 

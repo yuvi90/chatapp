@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 
 const signUpExtension = Prisma.defineExtension({
   model: {
-    users: {
+    user: {
       async signUp(
         firstName: string,
         lastName: string,
@@ -13,7 +13,7 @@ const signUpExtension = Prisma.defineExtension({
         role: "basic" | "admin" = "basic",
       ) {
         const hash = await bcrypt.hash(password, 12);
-        return xPrisma.users.create({
+        return xPrisma.user.create({
           data: {
             username,
             email,
@@ -29,10 +29,10 @@ const signUpExtension = Prisma.defineExtension({
           },
         });
       },
-      async createPasswordHash(password: string) {
+      async createPasswordHash(password: string): Promise<string> {
         return bcrypt.hash(password, 12);
       },
-      async checkPassword(password: string, hash: string) {
+      async checkPassword(password: string, hash: string): Promise<boolean> {
         return bcrypt.compare(password, hash);
       },
     },

@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { isAuthenticated, verifyToken } from "../utils/helpers.js";
 import userService from "../services/v1/user.services.js";
-
 // Types
 import { ApiError } from "../utils/response-handler.js";
 
@@ -10,7 +9,13 @@ interface AuthRequest extends Request {
   __isAuthenticated?: boolean;
 }
 
-// Authentication Middleware
+/**
+ * Middleware function to authenticate user based on the provided token.
+ *
+ * @param {AuthRequest} req - The incoming HTTP request with user authentication details.
+ * @param {Response} res - The outgoing HTTP response.
+ * @param {NextFunction} next - The next middleware function in the stack.
+ */
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
@@ -46,7 +51,13 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
-// Authorization Middleware
+/**
+ * Middleware function to restrict access to admin users only.
+ *
+ * @param {Request} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function in the middleware chain.
+ */
 export const adminOnly = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // if user is not authenticated
@@ -55,27 +66,28 @@ export const adminOnly = async (req: Request, res: Response, next: NextFunction)
     }
 
     const user = req.user;
-
-    if (!user?._id || !user?.username || !user?.role)
+    if (!user?._id || !user?.username || !user?.role) {
       return res.status(401).json({
         status: false,
         message: "Authentication Required!",
       });
+    }
 
-    const foundedUser = await userService.getUserByUsername(user.username);
-
-    if (!foundedUser)
+    const foundedUser = await userService.getUserByProperty("id", user._id);
+    if (!foundedUser) {
       return res.status(401).json({
         status: false,
         message: "Unauthorized!",
       });
+    }
 
     const allowedRoles = ["admin"];
-    if (!allowedRoles.includes(user.role))
+    if (!allowedRoles.includes(user.role)) {
       return res.status(403).json({
         status: false,
         message: "Unauthorized!",
       });
+    }
 
     next();
   } catch (error) {

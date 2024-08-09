@@ -1,13 +1,13 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-enum Roles {
+enum Role {
   basic
   admin
 }
@@ -18,24 +18,25 @@ enum LoginType {
   facebook
 }
 
-model Users {
-  id                      String             @id @default(uuid())
-  username                String             @unique
-  email                   String             @unique
+model User {
+  id                      String            @id @default(uuid())
+  username                String            @unique @db.VarChar(50)
+  email                   String            @unique @db.VarChar(50)
   password                String
-  loginType               LoginType
-  role                    Roles              @default(basic)
-  isEmailVerified         Boolean            @default(false)
-  emailVerificationExpiry DateTime?
-  emailVerificationToken  String?
-  resetPasswordExpiry     DateTime?
-  resetPasswordToken      String?
-  refreshToken            String?
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
-  userProfile             UserProfile? // 1-1
-  chatParticipants        ChatParticipants[] // 1-M
-  sendMessages            ChatMessages[]     @relation("UserMessages") // 1-M
+  loginType               LoginType         @map("login_type")
+  role                    Role              @default(basic)
+  refreshToken            String?           @map("refresh_token")
+  isEmailVerified         Boolean           @default(false) @map("is_email_verified")
+  emailVerificationToken  String?           @map("email_verification_token")
+  emailVerificationExpiry DateTime?         @map("email_verification_expiry")
+  resetPasswordToken      String?           @map("password_reset_token")
+  resetPasswordExpiry     DateTime?         @map("password_reset_expiry")
+  createdAt               DateTime          @default(now()) @map("created_at")
+  updatedAt               DateTime          @updatedAt @map("updated_at")
+  userProfile             UserProfile?
+  chatParticipants        ChatParticipant[]
+  sendMessages            ChatMessage[]     @relation("SenderMessages")
+  receiveMessages         ChatMessage[]     @relation("ReceiverMessages")
 
   @@index([email])
   @@index([username])
@@ -49,50 +50,52 @@ model UserProfile {
   lastName  String @map("last_name") @db.VarChar(30)
   avatar    Bytes?
   userId    String @unique @map("user_id")
-  user      Users  @relation(fields: [userId], references: [id], onDelete: Cascade) // 1-1
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([firstName, lastName])
   @@map("user_profiles")
 }
 
-model Chats {
-  id               String             @id @default(uuid())
-  name             String?
-  isGroupChat      Boolean            @default(false)
-  lastMessageId    String?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  messages         ChatMessages[]
-  chatParticipants ChatParticipants[]
+model Chat {
+  id               String            @id @default(uuid())
+  name             String?           @db.VarChar(50)
+  isGroupChat      Boolean           @default(false) @map("is_group_chat")
+  lastMessageId    String?           @map("last_message_id")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  messages         ChatMessage[]
+  chatParticipants ChatParticipant[]
 
   @@index([isGroupChat, createdAt])
   @@map("chats")
 }
 
-model ChatParticipants {
+model ChatParticipant {
   id        String   @id @default(uuid())
-  isAdmin   Boolean  @default(false)
-  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade) // 1-M
-  userId    String
-  chat      Chats    @relation(fields: [chatId], references: [id], onDelete: Cascade) // 1-M
-  chatId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isAdmin   Boolean  @default(false) @map("is_admin")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  chatId    String   @map("chat_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([chatId, userId])
   @@index([chatId, userId])
   @@map("chat_participants")
 }
 
-model ChatMessages {
-  id        String   @id @default(uuid())
-  content   String
-  sender    Users    @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade) // 1-M
-  senderId  String
-  chat      Chats    @relation(fields: [chatId], references: [id], onDelete: Cascade) // 1-M
-  chatId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model ChatMessage {
+  id         String   @id @default(uuid())
+  content    String
+  sender     User     @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId   String   @map("sender_id")
+  receiver   User     @relation("ReceiverMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId String   @map("receiver_id")
+  chat       Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  chatId     String   @map("chat_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@index([chatId, createdAt])
   @@index([senderId, createdAt])
