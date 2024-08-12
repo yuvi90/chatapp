@@ -32,3 +32,6 @@
 **/dist
 .DS_Store
 LICENSE
+
+# User
+**/*.env
